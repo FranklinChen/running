@@ -3,6 +3,20 @@
 -}
 module Time1 where
 
+import qualified Data.Char as Char
+import qualified Data.List as List
+
+{-|
+  0 to 9
+-}
+newtype Digit = Digit Int
+  deriving (Eq, Show)
+
+type DigitString = [Digit]
+
+digitsToInt :: DigitString -> Int
+digitsToInt = List.foldl' (\acc (Digit d) -> 10 * acc + d) 0
+
 newtype Hours = Hours Int
 
 newHours h | h >= 0    = Just $ Hours h
@@ -77,12 +91,12 @@ timeToSeconds s =
   case splitDigitsAtColon s of
     Nothing -> Nothing
     Just [hoursString,
-         minutesString @ [_, _],
-         secondsString @ [_, _]] ->
+          minutesString @ [_, _],
+          secondsString @ [_, _]] ->
       let
-        hours = read hoursString
-        minutes = read minutesString
-        seconds = read secondsString
+        hours = digitsToInt hoursString
+        minutes = digitsToInt minutesString
+        seconds = digitsToInt secondsString
       in
         if minutes >= 60 || seconds >= 60 then
           Nothing
@@ -95,20 +109,21 @@ timeToSeconds s =
 
   This should be in a standard library.
 -}
-splitDigitsAtColon :: String -> Maybe [String]
-splitDigitsAtColon xs = splitDigitsAtColon' xs ""
+splitDigitsAtColon :: String -> Maybe [DigitString]
+splitDigitsAtColon xs = splitDigitsAtColon' xs []
 
 {-|
   TODO: Could write monadically, but not now.
 -}
 splitDigitsAtColon' :: String
-                -> String         -- ^ stack for current digit string
-                -> Maybe [String] -- ^ string with only 0 through 9
+                    -> DigitString          -- ^ stack for current digit string
+                    -> Maybe [DigitString] -- ^ string with only 0 through 9
 splitDigitsAtColon' [] stack = Just [reverse stack]
 splitDigitsAtColon' (':':xs) stack =
   case splitDigitsAtColon' xs [] of
     Nothing   -> Nothing
     Just stacks -> Just $ (reverse stack):stacks
 splitDigitsAtColon' (x:xs) stack
-  | x >= '0' && x <= '9' = splitDigitsAtColon' xs $ x:stack
+  | x >= '0' && x <= '9' =
+    splitDigitsAtColon' xs $ (Digit (Char.ord x - Char.ord '0')) : stack
 splitDigitsAtColon' _ stack = Nothing

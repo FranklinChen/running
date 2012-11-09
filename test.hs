@@ -13,6 +13,7 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Control.Monad
 
 import qualified Data.List as List
+import qualified Data.Char as Char
 
 import qualified Time1 as T
 
@@ -22,12 +23,18 @@ main = $(defaultMainGenerator)
 
 -- Utils
 case_splitDigitsAtColon_digits =
-  T.splitDigitsAtColon "12:345:678" @?= Just ["12", "345", "678"]
+  T.splitDigitsAtColon "12:345:678" @?=
+  Just [[T.Digit 1, T.Digit 2],
+        [T.Digit 3, T.Digit 4, T.Digit 5],
+        [T.Digit 6, T.Digit 7, T.Digit 8]]
 
 case_splitDigitsAtColon_not_digits =
   T.splitDigitsAtColon "12:345:6X8" @?= Nothing
 
 generateDigits = listOf1 $ elements ['0'..'9']
+
+digitsToString :: T.DigitString -> String
+digitsToString digits = [Char.chr $ Char.ord '0' + d | T.Digit d <- digits]
 
 {-|
   Splitting and joining round trip
@@ -43,8 +50,8 @@ prop_round_trip_splitDigitsAtColon_and_intercalate =
          ) $
   \xs ->
   case T.splitDigitsAtColon xs of
-    Nothing        -> False
-    Just digitList -> List.intercalate ":" digitList == xs
+    Nothing         -> False
+    Just digitsList -> List.intercalate ":" (map digitsToString digitsList) == xs
 
 -- timeToSeconds success
 case_timeToSeconds_00_00_00 =
